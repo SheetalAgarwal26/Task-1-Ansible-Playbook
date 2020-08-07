@@ -1,0 +1,60 @@
+ - name: Configuration of Docker
+   hosts: all
+   tasks:
+       - name: Configure yum for Docker
+         yum_repository:
+                 name: Docker
+                 description: Docker repository
+                 baseurl: https://download.docker.com/linux/centos/7/x86_64/stable/
+                 gpgcheck: no
+
+       - name: Installing Docker
+         command: "yum install docker-ce -y --nobest"
+      
+       - name: Start and Enable Docker service
+         service:
+                 name: "docker"
+                 state: started
+                 enabled: yes
+
+       - name: Install Python3
+         package:
+                 name: python3
+                 state: present
+         register: x
+
+       - debug:
+                 var: x
+
+       - name: Install Docker SDK
+         pip:
+                 name: "docker"
+
+
+       - name: pull image httpd
+         docker_image:
+                 name: "httpd"
+                 source: pull
+         register: y
+
+
+       - debug:
+                 var: y
+
+       - name: Create Folder
+         file:
+             path: /web
+             state: directory   
+       - name: Copy Content
+         copy:
+             content: "It works"
+             dest: "/web/index.html"
+
+       - name: Launch docker Container
+         docker_container:
+                name: "DockerWebServer"
+                image: "httpd"
+                state: started
+                exposed_ports: "80"
+                ports: "8088:80"
+                volumes: /web/:/usr/local/apache2/htdocs/
